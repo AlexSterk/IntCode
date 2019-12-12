@@ -1,0 +1,20 @@
+module intcode
+
+imports
+  
+  Common
+
+context-free start-symbols
+  
+  Start
+
+context-free syntax
+  
+  Start.Program = <<{Statement "\n"}*>>
+  Statement.Print = <print <Exp>;>
+  Exp.Int = INT
+  Exp.Add = <<Exp> + <Exp>> {left}
+  Exp.Mul = <<Exp> * <Exp>> {left}
+  
+ context-free priorities
+ 	Exp.Mul > Exp.Add

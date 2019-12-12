@@ -1,0 +1,9 @@
+Program(
+  [ Print(Int("4"))
+  , Print(Add(Int("4"), Int("4")))
+  , Print(Mul(Int("4"), Int("4")))
+  , Print(
+      Add(Int("4"), Mul(Int("4"), Int("4")))
+    )
+  ]
+)
