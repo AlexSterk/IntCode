@@ -1,0 +1,10 @@
+---
+id: org.example:IntCodeAssembly.example:0.1.0-SNAPSHOT
+name: IntCodeAssembly
+dependencies:
+  compile:
+  - org.example:IntCodeAssembly:0.1.0-SNAPSHOT
+debug:
+  typesmart: false
+build:
+  useBuildSystemSpec: true

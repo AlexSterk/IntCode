@@ -1,0 +1,109 @@
+module static-semantics
+
+signature
+  sorts Start = Program
+    
+signature
+	sorts Program
+	constructors
+    Program        : list(Stmt) -> Program
+    
+signature
+	sorts Stmt
+	constructors	
+    Add            : Arg * Arg * Arg -> Stmt
+    Mul            : Arg * Arg * Arg -> Stmt
+    In             : Arg -> Stmt
+    Out            : Arg -> Stmt
+    Jne            : Arg * Arg -> Stmt
+    Jeq            : Arg * Arg -> Stmt
+    Lt             : Arg * Arg * Arg -> Stmt
+    Eq             : Arg * Arg * Arg -> Stmt
+    Rb             : Arg -> Stmt
+    Label          : ID -> Stmt
+    Int			   : INT -> Stmt
+    Halt           : Stmt
+    
+    Data		   : list(Arg) -> Stmt
+    
+signature
+	sorts Arg
+	constructors
+	Pos            : INT -> Arg
+    Rel            : INT -> Arg
+    Abs            : INT -> Arg
+    LabelRefI      : ID -> Arg
+    LabelRefP      : ID -> Arg
+    LabelRefR      : ID -> Arg
+	
+	
+
+    
+signature
+	sorts INT = int
+	sorts ID  = string
+
+rules // single-file entry point
+
+  programOK : Start
+
+  programOK(Program([])).
+  programOK(Program(l@[h | t])) :- stmtsOk(l).
+  
+  stmtsOk maps stmtOk(list(*))
+  stmtOk : Stmt
+  
+  stmtOk(Add(a1, a2, a3)) :- posOk(a1), posOk(a2), absOk(a3).
+  stmtOk(Mul(a1, a2, a3)) :- posOk(a1), posOk(a2), absOk(a3).
+  stmtOk(In(a)) :- absOk(a).
+  
+  stmtOk(Out(a)) :- posOk(a).
+  
+  stmtOk(Jne(a1, a2)) :- posOk(a1), jumpOk(a2).
+  stmtOk(Jeq(a1, a2)) :- posOk(a1), jumpOk(a2).
+  
+  stmtOk(Lt(a1, a2, a3)) :- posOk(a1), posOk(a2), absOk(a3).
+  stmtOk(Eq(a1, a2, a3)) :- posOk(a1), posOk(a2), absOk(a3).
+  
+  stmtOk(Rb(Abs(_))).
+  stmtOk(Rb(a)) :- false | error $[Relative base can only be adjusted by a parameter in immediate mode] @a.
+  stmtOk(Data(l)) :- datasOk(l).
+  
+  dataOk : Arg
+  datasOk maps dataOk(list(*))
+  dataOk(Abs(_)).
+  dataOk(_) :- false | error $[Only parameters in immediate mode are accepted].
+  
+  stmtOk(Int(i)).
+  
+  posOk : Arg
+  absOk : Arg
+  jumpOk : Arg
+  
+  posOk(Pos(i)) :- i#>= 0 | error $[Position cannot be negative].
+  posOk(LabelRefI(l)) :- false | error $[Label [l] is not defined].
+  posOk(LabelRefP(l)) :- false | error $[Label [l] is not defined].
+  posOk(LabelRefR(l)) :- false | error $[Label [l] is not defined].
+  posOk(_).
+  
+  absOk(Abs(i)) :- false | error $[Parameters that an instruction writes to cannot be in immediate mode].
+  absOk(LabelRefI(l)) :- false | error $[Label [l] is not defined].
+  absOk(LabelRefP(l)) :- false | error $[Label [l] is not defined].
+  absOk(LabelRefR(l)) :- false | error $[Label [l] is not defined].
+  absOk(a) :- posOk(a).
+  
+  jumpOk(LabelRefI(l)) :- false | error $[Label [l] is not defined].
+  jumpOk(LabelRefP(l)) :- false | error $[Label [l] is not defined].
+  jumpOk(LabelRefR(l)) :- false | error $[Label [l] is not defined].
+  jumpOk(_).
+  
+
+rules // multi-file entry point
+
+//  projectOk : scope
+//
+//  projectOk(s).
+//  
+//  fileOk : scope * Start
+//  
+//  fileOk(s, Empty()).

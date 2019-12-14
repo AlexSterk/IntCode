@@ -3,7 +3,7 @@ module Syntax
 imports 
 
   libspoofax/color/default
-  completion/colorer/intcode-cc-esv
+  completion/colorer/IntCodeAssembly-cc-esv
 
 language
 
@@ -13,6 +13,11 @@ language
   line comment  : "//"
   block comment : "/*" * "*/"
   fences        : [ ] ( ) { }
+  
+colorer
+  grey = 50 50 50
+  Meta : grey
+  RelBase : grey
 
 menus
   
@@ -20,11 +25,11 @@ menus
     
     action: "Format"          = editor-format (source)
     action: "Show parsed AST" = debug-show-aterm (source)
-    action: "Show desugared AST" = editor-desugar (source)
+    action : "Show desugared syntax" = editor-desugar (source)
     
-  menu: "IntCode" (openeditor)
+  menu: "Generation" (openeditor)
     
-    action: "Compile"          = compile-intcode (source)
+    action: "Compile to Intcode" = generate-intcode
 
 views
   

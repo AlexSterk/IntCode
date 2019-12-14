@@ -1,0 +1,15 @@
+module desugar
+
+imports
+	signatures/intcode-sig
+
+signature
+	constructors
+		BinExp : BinOp * Exp * Exp -> Exp
+		
+		Plus : BinOp
+		Times : BinOp
+	
+rules
+  desugar: Add(e1, e2) -> BinExp(Plus(), e1, e2)
+  desugar: Mul(e1, e2) -> BinExp(Times(), e1, e2)

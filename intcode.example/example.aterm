@@ -1,9 +1,16 @@
 Program(
-  [ Print(Int("4"))
-  , Print(Add(Int("4"), Int("4")))
-  , Print(Mul(Int("4"), Int("4")))
-  , Print(
-      Add(Int("4"), Mul(Int("4"), Int("4")))
+  [ Assign(Var("a"), Int("1"))
+  , Assign(Var("b"), Int("2"))
+  , Assign(Var("c"), Int("3"))
+  , Assign(Var("d"), In())
+  , Assign(
+      Var("a")
+    , Add(
+        In()
+      , Mul(Add(VarRef("b"), VarRef("c")), VarRef("d"))
+      )
     )
+  , Print(VarRef("a"))
+  , Block([])
   ]
 )

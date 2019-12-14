@@ -1,0 +1,17 @@
+jump start
+index:
+data 1 2 3 4
+start:
+mov 4 $tmp
+loop:
+jeq $tmp end
+out %index
+rb 1
+dec $tmp
+jump loop
+end:
+out stck
+halt
+tmp:
+data 0
+stck:

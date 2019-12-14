@@ -1,0 +1,10 @@
+Program(
+  [ Jeq(Abs(0), Abs(6))
+  , Int(1)
+  , Int(2)
+  , Int(3)
+  , Add(Abs(0), Abs(3), Rel(0))
+  , Int(99)
+  , Int(0)
+  ]
+)

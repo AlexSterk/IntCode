@@ -1,0 +1,72 @@
+module generation
+
+imports
+	desugar
+	signatures/IntCodeAssembly-sig
+
+
+rules
+	program-to-ic: Program(stmts) -> <trim-chars(?'['<+?']')> <write-to-string> <flatten-list> <map(stmt-to-ic)> stmts
+	
+	stmt-to-ic: Add(a1, a2, a3) -> [opcode, <get-int> a1, <get-int> a2, <get-int> a3]
+		where 
+			m1 := <get-mode> a1;
+			m2 := <get-mode> a2;
+			m3 := <get-mode> a3;
+			opcode := <string-to-int> <concat-strings> [m3,m2,m1,"01"]
+	stmt-to-ic: Mul(a1, a2, a3) -> [opcode, <get-int> a1, <get-int> a2, <get-int> a3]
+		where 
+			m1 := <get-mode> a1;
+			m2 := <get-mode> a2;
+			m3 := <get-mode> a3;
+			opcode := <string-to-int> <concat-strings> [m3,m2,m1,"02"]
+	stmt-to-ic: Lt(a1, a2, a3) -> [opcode, <get-int> a1, <get-int> a2, <get-int> a3]
+		where 
+			m1 := <get-mode> a1;
+			m2 := <get-mode> a2;
+			m3 := <get-mode> a3;
+			opcode := <string-to-int> <concat-strings> [m3,m2,m1,"07"]
+	stmt-to-ic: Eq(a1, a2, a3) -> [opcode, <get-int> a1, <get-int> a2, <get-int> a3]
+		where 
+			m1 := <get-mode> a1;
+			m2 := <get-mode> a2;
+			m3 := <get-mode> a3;
+			opcode := <string-to-int> <concat-strings> [m3,m2,m1,"08"]
+	stmt-to-ic: Jne(a1, a2) -> [opcode, <get-int> a1, <get-int> a2]
+		where 
+			m1 := <get-mode> a1;
+			m2 := <get-mode> a2;
+			opcode := <string-to-int> <concat-strings> [m2,m1,"05"]
+	stmt-to-ic: Jeq(a1, a2) -> [opcode, <get-int> a1, <get-int> a2]
+		where 
+			m1 := <get-mode> a1;
+			m2 := <get-mode> a2;
+			opcode := <string-to-int> <concat-strings> [m2,m1,"06"]
+	stmt-to-ic: In(a1) -> [opcode, <get-int> a1]
+		where 
+			m1 := <get-mode> a1;
+			opcode := <string-to-int> <concat-strings> [m1,"03"]
+	stmt-to-ic: Out(a1) -> [opcode, <get-int> a1]
+		where 
+			m1 := <get-mode> a1;
+			opcode := <string-to-int> <concat-strings> [m1,"04"]
+	stmt-to-ic: Rb(a1) -> [opcode, <get-int> a1]
+		where 
+			m1 := <get-mode> a1;
+			opcode := <string-to-int> <concat-strings> [m1,"09"]
+	stmt-to-ic: Int(i) -> [i]
+		
+	get-mode: Pos(_) -> "0"
+	get-mode: Abs(_) -> "1"
+	get-mode: Rel(_) -> "2"
+	
+	get-int: Pos(i) -> i
+	get-int: Abs(i) -> i
+	get-int: Rel(i) -> i
+	    
+strategies
+	generate-intcode:
+	    (_, _, ast, path, project-path) -> (filename, result)
+	    with
+	      filename := <guarantee-extension(|"ic")> path
+	    ; result   := <topdown(rm-annotations); program-to-ic> ast

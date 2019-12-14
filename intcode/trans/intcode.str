@@ -6,7 +6,8 @@ imports
   pp
   outline
   analysis
-  signatures/intcode-sig
+  desugar/-
+  codegen/-
 
 rules // Debugging
   
@@ -16,69 +17,20 @@ rules // Debugging
       filename := <guarantee-extension(|"aterm")> path
     ; result   := node
     
+  editor-desugar:
+	  (_, _, ast, path, project-path) -> (filename, text)
+	  where
+	    filename := <guarantee-extension(|"desugared.aterm")> path ;
+	    text     := <desugar-all> ast
+  
+    
   compile-intcode:
-    (node, _, _, path, project-path) -> (filename, result)
+    (_, _, ast, path, project-path) -> (filename, result)
     with
       filename := <guarantee-extension(|"ic")> path
-    ; result   := <compile-program> node
-    
-  compile-program: p@Program(stmts) -> $[[x],[memory]]
-  	where 
-  		size := <program-size> p;
-  		(x, cur) := <compile-stmts(|size)> stmts;
-  		memory := <create-memory> (size, cur)
-  		
-  compile-stmts(|cur): [] -> ("99", cur)
-  compile-stmts(|cur): [h] -> ($[[s],99], ncur)
-  	where (s, ncur) := <compile-stmt(|cur)> h
-  compile-stmts(|cur): [h | t] -> ($[[s],[s2]], nncur)
-  	where 
-  	(s, ncur) := <compile-stmt(|cur)> h;
-  	(s2, nncur) := <compile-stmts(|ncur)> t
+    ; result   := <compile-program> <desugar-all> ast
   
-  compile-stmt(|cur): Print(Int(n)) -> ($[104,[n]], cur)
-  compile-stmt(|cur): Print(e) -> ($[[s],4,[n]], n)
-  	where
-  		(s, n) := <compile-exp(|cur)> e
-  
-  compile-exp(|cur): Add(Int(n1), Int(n2)) -> ($[1101,[n1],[n2],[p]], p)
-  	where p := <inc> cur
-  compile-exp(|cur): Add(Int(n1), e) -> ($[[s],101,[n1],[n2],[p]], p)
-  	where 
-  		(s, n2) := <compile-exp(|cur)> e;
-  		p := <inc> n2
-  compile-exp(|cur): Add(e, Int(n2)) -> ($[[s],1001,[n1],[n2],[p]], p)
-  	where 
-  		(s, n1) := <compile-exp(|cur)> e;
-  		p := <inc> n1
-  compile-exp(|cur): Add(e1, e2) -> ($[[s1],[s2],1,[n1],[n2],[p]], p)
-  	where 
-  		(s1, n1) := <compile-exp(|cur)> e1;
-  		(s2, n2) := <compile-exp(|n1)> e2;
-  		p := <inc> n2
-  		
-  compile-exp(|cur): Mul(Int(n1), Int(n2)) -> ($[1102,[n1],[n2],[p]], p)
-  	where p := <inc> cur
-  compile-exp(|cur): Mul(Int(n1), e) -> ($[[s],102,[n1],[n2],[p]], p)
-  	where 
-  		(s, n2) := <compile-exp(|cur)> e;
-  		p := <inc> n2
-  compile-exp(|cur): Mul(e, Int(n2)) -> ($[[s],1002,[n1],[n2],[p]], p)
-  	where 
-  		(s, n1) := <compile-exp(|cur)> e;
-  		p := <inc> n1
-  compile-exp(|cur): Mul(e1, e2) -> ($[[s1],[s2],2,[n1],[n2],[p]], p)
-  	where 
-  		(s1, n1) := <compile-exp(|cur)> e1;
-  		(s2, n2) := <compile-exp(|n1)> e2;
-  		p := <inc> n2
-  		
-  program-size: Program(stmts) -> <foldl(addi)> (x, 0)
-  	where x := <collect-all(get-size, conc)> stmts
-  
-  get-size: Print(_) -> 2
-  get-size: Add(_, _) -> 4
-  get-size: Mul(_, _) -> 4
+strategies
 
-  create-memory: (s, s) -> "0"
-  create-memory: (s, c) -> $[0,[<create-memory> (s, <subti> (c, 1))]]
+  desugar-all = bottomup(try(desugar))
+  

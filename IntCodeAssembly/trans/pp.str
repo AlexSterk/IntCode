@@ -1,0 +1,49 @@
+module pp
+
+imports
+
+  libstratego-gpp
+  libspoofax/sdf/pp
+  libspoofax/editor/refactoring/-
+  pp/IntCodeAssembly-parenthesize
+  pp/IntCodeAssembly-pp
+
+rules
+
+  editor-format:
+    (node, _, ast, path, project-path) -> (filename, result)
+    with
+      ext      := <get-extension> path
+    ; filename := <guarantee-extension(|$[pp.[ext]])> path
+    ; result   := <pp-debug> node
+
+rules
+  
+  pp-IntCodeAssembly-string =
+    parenthesize-IntCodeAssembly
+    ; prettyprint-IntCodeAssembly-start-symbols
+    ; !V([], <id>)
+    ; box2text-string(|120)
+      
+  pp-partial-IntCodeAssembly-string =
+    parenthesize-IntCodeAssembly
+    ; prettyprint-IntCodeAssembly
+    ; !V([], <id>)
+    ; box2text-string(|120)
+    
+  pp-partial-IntCodeAssembly-string(|sort) =
+    parenthesize-IntCodeAssembly
+    ; prettyprint-IntCodeAssembly(|sort)
+    ; !V([], <id>)
+    ; box2text-string(|120)  
+      
+  pp-debug :
+    ast -> result
+    with
+       result := <pp-IntCodeAssembly-string> ast
+    <+ <bottomup(try(not(is-string); not(is-list); not(pp-IntCodeAssembly-string); debug(!"cannot pp ")))> ast
+    ;  result := ""
+
+rules
+  
+  construct-textual-change = construct-textual-change(pp-partial-IntCodeAssembly-string, parenthesize, override-reconstruction, resugar)

@@ -1,0 +1,10 @@
+Program(
+  [RelBase(Stack())]
+, [ Jump(LabelRefI("start"))
+  , Label("index")
+  , Data([Abs("1"), Abs("2"), Abs("3")])
+  , Label("start")
+  , Mov(LabelRefI("index"), Rel("0"))
+  , Halt()
+  ]
+)

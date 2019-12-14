@@ -1,0 +1,95 @@
+module IntCodeAssembly
+
+lexical syntax
+
+  ID             = [\_a-zA-Z] [\-\_a-zA-Z0-9]* 
+  INT            = "-"? [0-9]+ 
+  BackSlashChar  = "\\" 
+  LAYOUT         = [\ \t\n\r] 
+  CommentChar    = [\*] 
+  LAYOUT         = "/*" InsideComment* "*/" 
+  InsideComment  = ~[\*] 
+  InsideComment  = CommentChar 
+  LAYOUT         = "//" ~[\n\r]* NewLineEOF 
+  NewLineEOF     = [\n\r] 
+  NewLineEOF     = EOF 
+  EOF            =  
+
+lexical restrictions
+
+  // Ensure greedy matching for lexicals
+  
+  CommentChar   -/- [\/]
+  INT           -/- [0-9]
+  ID            -/- [a-zA-Z0-9\_]
+  
+  // EOF may not be followed by any char
+  
+  EOF           -/- ~[]
+  
+  // Backslash chars in strings may not be followed by " 
+  
+  BackSlashChar -/- [\"]
+
+context-free restrictions
+
+  // Ensure greedy matching for comments
+  
+  LAYOUT? -/- [\ \t\n\r]
+  LAYOUT? -/- [\/].[\/]
+  LAYOUT? -/- [\/].[\*]
+
+
+context-free start-symbols
+  
+  Start
+
+context-free syntax
+  
+  Start = Program
+  
+  Program.Program = <
+  	<{Meta "\n"}*>
+  	<{Stmt "\n"}*>
+  >
+  
+  Meta.RelBase = '%' 'rb' RelBase
+  RelBase.Stack = 'stack'
+  
+  Stmt.Add 	= 'add' Arg Arg Arg
+  Stmt.Mul 	= 'mul' Arg Arg Arg
+  Stmt.In  	= 'in' Arg
+  Stmt.Out 	= 'out' Arg
+  Stmt.Jne  = 'jne' Arg Arg
+  Stmt.Jeq	= 'jeq' Arg Arg
+  Stmt.Lt	= 'lt' Arg Arg Arg
+  Stmt.Eq	= 'eq' Arg Arg Arg
+  Stmt.Rb	= 'rb' Arg
+  Stmt.Halt = 'halt'
+  
+  Stmt.Push = 'push' Arg
+  Stmt.Pop  = 'pop' Arg
+  Stmt.Label = <<ID>:>
+  Stmt.Jump  = 'jump' Arg
+  Stmt.Mov   = 'mov' Arg Arg
+  Stmt.Sub   = 'sub' Arg Arg Arg
+  Stmt.Call  = 'call' Label
+  Stmt.Return = 'return'
+  Stmt.Data  = <data <{Loc " "}+>>
+  Stmt.Inc = 'inc' Arg
+  Stmt.Dec = 'dec' Arg
+  
+  Arg = Loc
+  Arg = Label
+  
+  Loc.Pos = <$<INT>>
+  Loc.Rel = <%<INT>>
+  Loc.Abs = <<INT>>
+  
+  Label.LabelRefI = <<ID>>
+  Label.LabelRefP = <$<ID>>
+  Label.LabelRefR = <%<ID>>
+
+  
+context-free priorities
+

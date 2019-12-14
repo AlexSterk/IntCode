@@ -1,0 +1,124 @@
+module desugar
+
+imports signatures/IntCodeAssembly-sig
+
+signature
+	constructors
+		Int : INT -> Stmt
+		
+rules
+	editor-desugar:
+	  (_, _, ast, path, project-path) -> (filename, text)
+	  where
+	    filename := <guarantee-extension(|"desugared.aterm")> path ;
+	    text     := <desugar-all> ast
+
+		
+rules
+	desugar-program: p@Program(m, l) -> <try(add-halt); add-memory; desugar-labels> p
+	
+	desugar: Pos(i) -> Pos(<string-to-int> i)
+	desugar: Abs(i) -> Abs(<string-to-int> i)
+	desugar: Rel(i) -> Rel(<string-to-int> i)
+	desugar: Int(i) -> Int(<string-to-int> i)
+	desugar: Halt() -> Int(99)
+	
+	desugar: Push(a) -> [
+		Mov(a, Rel(0)),
+		Rb(Abs(1))
+	]
+	desugar: Pop(a) -> [
+		Rb(Abs(-1)),
+		Mov(Rel(0), a)
+	]
+	desugar: Jump(a) -> Jeq(Abs(0), a)
+	desugar: Mov(a1, a2) -> Add(Abs(0), a1, a2)
+	desugar: Sub(a1, a2, a3) -> [
+		Mul(a2, Abs(-1), Rel(0)),
+		Add(a1, Rel(0), a3)
+	]
+	desugar: Inc(a) -> Add(a, Abs(1), a)
+	desugar: Dec(a) -> Add(a, Abs(-1), a)
+	
+	desugar: Call(l) -> [
+		Push(LabelRefI(ret)),
+		Jump(l),
+		Label(ret)
+	] where ret := <new> "__ret"
+	desugar : Return() -> [
+		Rb(Abs(-1)),
+		Jump(Rel(0))
+	]
+	
+	desugar: Data(l) -> <map({?Abs(i); !Int(i)})> l 
+	
+	desugar: list -> <flatten-list> list
+	
+	desugar-labels: Program(stmts) -> Program(ns)
+		where 
+		(stored, scp) := <store-labels(|0)> (stmts, []);
+		ns := <resolve-labels(|scp)> stored
+		
+	store-labels(|sz): ([], scp) -> ([], scp)
+	store-labels(|sz): ([Label(label) | t], scp) -> (ret, nnscp)
+		where
+			nscp := [(label, sz) | scp]; (ret, nnscp) := <store-labels(|sz)> (t, nscp)
+	store-labels(|sz): ([h | t], scp) -> ([h | ret], nscp)
+		where
+			nsz := <addi> (sz, <size-of> h); (ret, nscp) := <store-labels(|nsz)> (t, scp)
+			
+	resolve-labels(|scp) = map(alltd(rewrite-label(|scp)))
+	
+	rewrite-label(|scp) = ?ast; get-label; ?label; !scp; fetch(?(label, loc)); !(ast, loc); transfer-label
+	
+	get-label: LabelRefI(label) -> label
+	get-label: LabelRefP(label) -> label
+	get-label: LabelRefR(label) -> label
+	
+	transfer-label: (LabelRefI(_), i) -> Abs(i)
+	transfer-label: (LabelRefP(_), i) -> Pos(i)
+	transfer-label: (LabelRefR(_), i) -> Rel(i)
+
+	add-memory: Program([RelBase(Stack())], l) -> Program(<concat> [[Rb(Abs(rel))], l, <map(!Int(0))> <upto> <dec> <subti> (stck, size)])
+		where 
+			size := <addi> (<get-size> l, 2); 
+			rel := <inc> <inc> size;
+			stck := <get-stack-size(|<inc> size)> l
+	add-memory: Program(m, l) -> Program(<concat> [l, <map(!Int(0))> <upto> <dec> <subti> (stck, size)])
+		where 
+			size := <get-size> l; 
+			stck := <get-stack-size(|<inc> size)> l
+		
+	get-stack-size(|offset): [] -> 0
+	get-stack-size(|offset): [h | t] -> <max> (size, <get-stack-size(|new_offset)> t)
+		where
+			(size, new_offset) := <stack-size(|offset)> h
+			
+	stack-size(|offset): Rb(Abs(i)) -> (0, <addi> (offset, <string-to-int> i))			
+	stack-size(|offset): stmt -> (max, offset)
+		where max := <foldr(!0, max)> <map(apply-offset(|offset) <+ ?"test"; perror)> <collect-all(?Pos(_) <+ ?Rel(_))> stmt
+		
+	apply-offset(|offset): Pos(i) -> i
+	apply-offset(|offset): Rel(i) -> <addi> (offset, i)
+	
+	add-halt: Program(m, l) -> Program(m, <conc> (l, [Int(99)]))
+		where <not(member)> (Int(99), l)
+		
+	get-size = collect-all(size-of, conc); foldr(!0, addi)
+	
+	size-of: Add(_, _, _) -> 4
+	size-of: Mul(_, _, _) -> 4
+	size-of: Lt(_, _, _) -> 4
+	size-of: Eq(_, _, _) -> 4
+	size-of: In(_) -> 2
+	size-of: Out(_) -> 2
+	size-of: Rb(_) -> 2
+	size-of: Jne(_, _) -> 3
+	size-of: Jeq(_, _) -> 3
+	size-of: Halt() -> 1
+	size-of: Int(_) -> 1
+	size-of: Data(l) -> <length> l
+		
+strategies
+
+	desugar-all = topdown(try(desugar)); topdown(try(desugar)); desugar-program
