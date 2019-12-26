@@ -1,3 +1,0 @@
-Program(
-  [Assign(Var("a"), Int("3")), Print(Var("a"))]
-)
