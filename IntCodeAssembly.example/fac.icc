@@ -1,0 +1,24 @@
+%rb stack
+
+in $fac_input
+call fac
+out $fac_output
+
+halt
+
+fac:
+jeq $fac_input fac_end
+push $fac_input
+dec $fac_input
+call fac
+pop $fac_input
+mul $fac_input $fac_output $fac_output
+return
+
+fac_end:
+mov 1 $fac_output
+return
+
+fac_input: data 0
+fac_temp: data 0
+fac_output: data 0

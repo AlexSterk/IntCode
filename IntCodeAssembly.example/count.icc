@@ -1,0 +1,33 @@
+%rb stack
+
+jump main
+//count:
+//mov %-2 %1
+//count_loop:
+//jeq %1 count_end
+//out %1
+//dec %1
+//jump count_loop
+//count_end:
+//return
+
+count:
+mov 0 %1
+count_loop:
+eq %1 %-2 %0
+jne %0 count_end
+out %1
+inc %1
+jump count_loop
+count_end:
+
+return
+
+
+main:
+in %0
+push %0
+call count
+
+halt
+

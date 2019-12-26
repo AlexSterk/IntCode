@@ -65,8 +65,7 @@ rules // single-file entry point
   stmtOk(Lt(a1, a2, a3)) :- posOk(a1), posOk(a2), absOk(a3).
   stmtOk(Eq(a1, a2, a3)) :- posOk(a1), posOk(a2), absOk(a3).
   
-  stmtOk(Rb(Abs(_))).
-  stmtOk(Rb(a)) :- false | error $[Relative base can only be adjusted by a parameter in immediate mode] @a.
+  stmtOk(Rb(a)) :- posOk(a).
   stmtOk(Data(l)) :- datasOk(l).
   
   dataOk : Arg
